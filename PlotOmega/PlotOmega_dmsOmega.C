@@ -29,8 +29,26 @@ char *RunName[MAX_RUN] = {"C12","Fe56","Sn","Pb208"};
 const Int_t MAX_TGT = 3;
 char *TgtName[MAX_TGT] = {"NoTarget","LD2","Nuc"};
 
-const Int_t MAX_CUT = 17;
-char *CutName[MAX_CUT] = {"None","All #omega cuts","M(#pi^{0})","Q^{2}","W","V_{z} Matching","Part. Topology","#theta_{e-,#gamma}","M(#pi^{+}#pi^{-}","EC 2nd Moment for #gamma's,  Region 1","EC 2nd Moment for #gamma's, Region 2","EC 2nd Moment for #gamma's, Region 3","EC 3rd Moment for #gamma's, Region 1","EC 3rd Moment for #gamma's, Region 2","EC 3rd Moment for #gamma's, Region 3","Photon TOF M^{2}","Dalitz 1"};
+const Int_t MAX_CUT = 19;
+char *CutName[MAX_CUT] = {"None",
+    "All #omega cuts",
+    "M(#pi^{0})",
+    "Q^{2}",
+    "W",
+    "V_{z} Matching",
+    "#theta_{e-,#gamma}",
+    "M(#pi^{+}#pi^{-}",
+    "Part. Topology",
+    "EC 2nd Moment for #gamma's, Region 1",
+    "EC 2nd Moment for #gamma's, Region 2",
+    "EC 2nd Moment for #gamma's, Region 3",
+    "EC 3rd Moment for #gamma's, Region 1",
+    "EC 3rd Moment for #gamma's, Region 2",
+    "EC 3rd Moment for #gamma's, Region 3",
+    "Photon TOF M^{2}",
+    "Dalitz 1",
+    "Proton In Event",
+    "Proton-In-Event/All"};
 
 // 
 // PlotOmega_CutIndex - plot omega inv. mass for a specific cut selection
@@ -123,6 +141,90 @@ void PlotOmega_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_
 	c1->Print(OutCan);
 	sprintf(OutCan,"PlotOmega_%s_%i_%i.eps",hname,chanLo,chanHi);
 	c1->Print(OutCan);
+}
+
+//
+// OverlayOmega_CutIndex - overlay 2 projections of the omega inv. mass for a specific cut selection
+//
+//                  fAna = output from eg2a DMS
+//                  tgtIndex = target index
+//                  chan1 = projection 1
+//                  chan2 = projection 2
+//
+void OverlayOmega_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t chan1 = 0, Int_t chan2=0)
+{
+    Int_t i;
+    char OutCan[100];
+    char strname[100];
+    char hname[50];
+    char title[100];
+    char strname[100];
+    char legLabel[50];
+    
+    Int_t iColor = 0;
+    
+    TH1D *h1D[2];
+    
+    Check_HistIndex(histIndex);
+    Check_TgtIndex(tgtIndex);
+    Check_CutIndex(chan1);
+    Check_CutIndex(chan2);
+    Check_CutLoHi(chan1,chan2);
+    
+    // Canvas to plot histogram
+    TCanvas *c1 = new TCanvas("c1","c1",0,0,600,600);
+    c1->SetBorderMode(1);  //Bordermode (-1=down, 0 = no border, 1=up)
+    c1->SetBorderSize(5);
+    gStyle->SetOptStat(0);
+    c1->SetFillStyle(4000);
+    
+    // data files contain the trees
+    printf("Analyzing file %s\n",fAna);
+    TFile *fm = new TFile(fAna,"READ");
+    TDirectory *tmp = fm->GetDirectory(TgtName[tgtIndex]);
+    
+    c1->cd();
+    gPad->SetLeftMargin(Lmar);
+    gPad->SetRightMargin(Rmar);
+    gPad->SetFillColor(0);
+    
+    TLegend *leg = new TLegend(0.6,0.5,1.0,0.875);
+    
+    sprintf(hname,"%s%s",HistName[histIndex],TgtName[tgtIndex]);
+    TH2D *h2D = (TH2D*)tmp->Get(hname);
+    
+    sprintf(strname,"%s_%i",hname,chan1);
+    h1D[0] = (TH1D*)h2D->ProjectionX(strname,chan1+1,chan1+1,"");
+    h1D[0]->SetLineWidth(2);
+    h1D[0]->SetLineColor(lcol[0]);
+    h1D[0]->SetTitle(title);
+    h1D[0]->GetXaxis()->CenterTitle();
+    h1D[0]->GetYaxis()->CenterTitle();
+    h1D[0]->GetYaxis()->SetTitle("Counts");
+    h1D[0]->GetYaxis()->SetTitleOffset(yoff);
+    h1D[0]->Draw();
+        
+    sprintf(legLabel,"%s",CutName[chan1]);
+    leg->AddEntry(h1D[0],legLabel,"l");
+    
+    sprintf(strname,"%s_%i",hname,chan2);
+    h1D[1] = (TH1D*)h2D->ProjectionX(strname,chan2+1,chan2+1,"");
+    h1D[1]->SetLineWidth(2);
+    h1D[1]->SetLineColor(lcol[1]);
+    h1D[1]->Draw("same");
+    
+    sprintf(legLabel,"%s",CutName[chan2]);
+    leg->AddEntry(h1D[1],legLabel,"l");
+    
+    leg->SetLineColor(0);
+    leg->SetFillStyle(0);
+    leg->SetHeader(legHeader[histIndex]);
+    leg->Draw();
+    
+    sprintf(OutCan,"OverlayOmega_%s_%i_%i.gif",hname,chan1,chan2);
+    c1->Print(OutCan);
+    sprintf(OutCan,"OverlayOmega_%s_%i_%i.eps",hname,chan1,chan2);
+    c1->Print(OutCan);
 }
 
 //
