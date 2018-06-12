@@ -29,7 +29,7 @@ char *RunName[MAX_RUN] = {"C12","Fe56","Sn","Pb208"};
 const Int_t MAX_TGT = 3;
 char *TgtName[MAX_TGT] = {"NoTarget","LD2","Nuc"};
 
-const Int_t MAX_CUT = 19;
+const Int_t MAX_CUT = 21;
 char *CutName[MAX_CUT] = {"None",
     "All #omega cuts",
     "M(#pi^{0})",
@@ -48,7 +48,9 @@ char *CutName[MAX_CUT] = {"None",
     "Photon TOF M^{2}",
     "Dalitz 1",
     "Proton In Event",
-    "Proton-In-Event/All"};
+    "Proton-In-Event/All",
+    "Evt. Particle Comb.",
+    "Evt. Particle Comb./All"};
 
 // 
 // PlotOmega_CutIndex - plot omega inv. mass for a specific cut selection
@@ -58,7 +60,7 @@ char *CutName[MAX_CUT] = {"None",
 //                  chanLo = lower bin
 //                  chanHi = upper bin
 //
-void PlotOmega_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t chanLo = 0, Int_t chanHi=0)
+void PlotOmega_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t runIndex=0, Int_t chanLo = 0, Int_t chanHi=0)
 {
     Int_t i;
     char OutCan[100];
@@ -111,10 +113,10 @@ void PlotOmega_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_
     h1D_noCut->GetYaxis()->SetTitleOffset(yoff);
     h1D_noCut->SetLineWidth(2);
     h1D_noCut->Draw();
-    
+
     sprintf(legLabel,"%s",CutName[1]);
     leg->AddEntry(h1D_noCut,legLabel,"l");
-    
+
     iColor++;
     
     sprintf(hname,"%s%s",HistName[histIndex],TgtName[tgtIndex]);
@@ -136,10 +138,10 @@ void PlotOmega_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_
     leg->SetFillStyle(0);
     leg->SetHeader(legHeader[histIndex]);
     leg->Draw();
-    
-	sprintf(OutCan,"PlotOmega_%s_%i_%i.gif",hname,chanLo,chanHi);
+
+	sprintf(OutCan,"PlotOmega_%s_%s_%i_%i.gif",hname,RunName[runIndex],chanLo,chanHi);
 	c1->Print(OutCan);
-	sprintf(OutCan,"PlotOmega_%s_%i_%i.eps",hname,chanLo,chanHi);
+	sprintf(OutCan,"PlotOmega_%s_%s_%i_%i.eps",hname,RunName[runIndex],chanLo,chanHi);
 	c1->Print(OutCan);
 }
 
