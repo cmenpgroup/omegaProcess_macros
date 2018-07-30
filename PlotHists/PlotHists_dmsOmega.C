@@ -7,9 +7,9 @@
 //--------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
-gROOT->Reset();   // start from scratch
+// gROOT->Reset();   // start from scratch
 
 Float_t Lmar = 0.125;
 Float_t Rmar = 0.125;
@@ -22,20 +22,20 @@ Float_t yoff = 1.75;
 //                  hname = histogram name
 //                  target = target name
 //
-void PlotHists_dmsOmega(char *fAna, char *fDir, char *hname, char *target, char *tgtOut, int iDim = 1)
+void PlotHists_dmsOmega(string fAna, string fDir, string hname, string HistogramTitle, string tgtOut, int iDim = 1)
 {
 	char OutCan[100];
     
 	// data files contain the trees
 
-    printf("Analyzing file %s:/%s\n",fAna,fDir);
+    printf("Analyzing file %s:/%s\n",fAna.c_str(),fDir.c_str());
     
     
-	TFile *fm = new TFile(fAna,"READ");
-    TDirectory *tmp = fm->GetDirectory(fDir);
+	TFile *fm = new TFile(fAna.c_str(),"READ");
+    TDirectory *tmp = fm->GetDirectory(fDir.c_str());
     
-	TH1F *hist = (TH1F*)tmp->Get(hname);
-	hist->SetTitle(target);
+	TH1F *hist = (TH1F*)tmp->Get(hname.c_str());
+	hist->SetTitle(HistogramTitle.c_str());
 	hist->GetXaxis()->CenterTitle();
 	hist->GetYaxis()->CenterTitle();
 	hist->GetYaxis()->SetTitleOffset(yoff);
@@ -64,9 +64,9 @@ void PlotHists_dmsOmega(char *fAna, char *fDir, char *hname, char *target, char 
             break;
     }
 
-	sprintf(OutCan,"dmsOmega_%s_%s.gif",tgtOut,hname);
+	sprintf(OutCan,"dmsOmega_%s_%s.gif",tgtOut.c_str(),hname.c_str());
 	c1->Print(OutCan);
-	sprintf(OutCan,"dmsOmega_%s_%s.eps",tgtOut,hname);
+	sprintf(OutCan,"dmsOmega_%s_%s.eps",tgtOut.c_str(),hname.c_str());
 	c1->Print(OutCan);
 }
 
