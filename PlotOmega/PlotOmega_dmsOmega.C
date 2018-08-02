@@ -510,6 +510,7 @@ void CompOmega_Files(string fAna1, string fAna2, Int_t histIndex =0, Int_t tgtIn
         h1D[i]->GetYaxis()->SetTitleOffset(yoff);
         h1D[i]->SetLineWidth(2);
         h1D[i]->SetLineColor(lcol[i]);
+//        if(i==1) h1D[1]->Scale(h1D[0]->Integral()/h1D[1]->Integral());
         (i==0) ? h1D[i]->Draw() : h1D[i]->Draw("same");
         
         leg->AddEntry(h1D[i],legLabel,"l");
