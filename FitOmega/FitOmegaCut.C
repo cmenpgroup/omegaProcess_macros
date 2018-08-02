@@ -1,4 +1,4 @@
-// 
+//
 // FitOmega - background subtraction routine where the peak is fit with a well-known function
 //			   like a gaussian.  The backgorund is fit with another well-known function like a
 //             polynomial.
