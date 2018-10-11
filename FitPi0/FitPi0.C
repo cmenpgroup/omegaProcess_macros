@@ -365,18 +365,6 @@ void PlotPi0_CutIndex(string fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t
     TH1D *h1D_noCut = (TH1D*)h2D->ProjectionX(strname,1,1,"");
     
     sprintf(title,"Target: %s",myCuts.Get_Tgt(tgtIndex).c_str());
-    h1D_noCut->SetTitle(title);
-    h1D_noCut->GetXaxis()->CenterTitle();
-    h1D_noCut->GetYaxis()->CenterTitle();
-    h1D_noCut->GetYaxis()->SetTitle("Counts");
-    h1D_noCut->GetYaxis()->SetTitleOffset(yoff);
-    h1D_noCut->SetLineWidth(2);
-    h1D_noCut->Draw();
-    
-    sprintf(legLabel,"%s",myCuts.Get_Cuts(0).c_str());
-    leg->AddEntry(h1D_noCut,legLabel,"l");
-    
-    iColor++;
     
     for(i=chanLo; i<chanHi+1; i++){
         sprintf(strname,"%s_%i",hname,i);
@@ -390,7 +378,7 @@ void PlotPi0_CutIndex(string fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t
         h1D[i]->GetYaxis()->SetTitleOffset(yoff);
         h1D[i]->SetLineWidth(2);
         h1D[i]->SetLineColor(lcol[iColor]);
-        h1D[i]->Draw("same");
+        i==chanLo ? h1D[i]->Draw() : h1D[i]->Draw("same");
         
         sprintf(legLabel,"%s",myCuts.Get_Cuts(i).c_str());
         leg->AddEntry(h1D[i],legLabel,"l");
