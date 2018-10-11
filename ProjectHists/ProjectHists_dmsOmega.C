@@ -7,9 +7,9 @@
 //--------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
-gROOT->Reset();   // start from scratch
+//gROOT->Reset();   // start from scratch
 
 Float_t Lmar = 0.125;
 Float_t Rmar = 0.125;
@@ -26,7 +26,7 @@ Float_t yoff = 1.75;
 //                  chanLo = lower bin
 //                  chanHi = upper bin
 //
-void ProjectHists_dmsOmega(char *fAna,  char *fDir, char *hname, char *title, char *tgtOut, Int_t chanLo=0, Int_t chanHi=0, char* projAxis="x")
+void ProjectHists_dmsOmega(string fAna,  string fDir, string hname, string title, string tgtOut, Int_t chanLo=0, Int_t chanHi=0, string projAxis="x")
 {
 	char OutCan[100];
     char strname[100];
@@ -39,27 +39,27 @@ void ProjectHists_dmsOmega(char *fAna,  char *fDir, char *hname, char *title, ch
 	c1->SetFillStyle(4000);
 	
 	// data files contain the trees
-	printf("Analyzing file %s\n",fAna);  
-	TFile *fm = new TFile(fAna,"READ");
-    TDirectory *tmp = fm->GetDirectory(fDir);
+	printf("Analyzing file %s\n",fAna.c_str());
+	TFile *fm = new TFile(fAna.c_str(),"READ");
+    TDirectory *tmp = fm->GetDirectory(fDir.c_str());
 	
 	c1->cd();
 	gPad->SetLeftMargin(Lmar);
 	gPad->SetRightMargin(Rmar);
 	gPad->SetFillColor(0);
     
-	TH2D *h2D = (TH2D*)tmp->Get(hname);
+	TH2D *h2D = (TH2D*)tmp->Get(hname.c_str());
     TH1D *h1D;
     
-    switch(projAxis){
+    switch(projAxis.c_str()){
         case "x":
         case "X":
-            sprintf(strname,"%s_px_%i_%i",hname,chanLo,chanHi);
+            sprintf(strname,"%s_px_%i_%i",hname.c_str(),chanLo,chanHi);
             h1D = (TH1D*)h2D->ProjectionX(strname,chanLo,chanHi,"");
             break;
         case "y":
         case "Y":
-            sprintf(strname,"%s_py_%i_%i",hname,chanLo,chanHi);
+            sprintf(strname,"%s_py_%i_%i",hname.c_str(),chanLo,chanHi);
             h1D = (TH1D*)h2D->ProjectionY(strname,chanLo,chanHi,"");
             break;
         default:
@@ -67,7 +67,7 @@ void ProjectHists_dmsOmega(char *fAna,  char *fDir, char *hname, char *title, ch
             exit(0);
             break;
     }
-	h1D->SetTitle(title);
+	h1D->SetTitle(title.c_str());
 	h1D->GetXaxis()->CenterTitle();
 	h1D->GetYaxis()->CenterTitle();
     h1D->GetYaxis()->SetTitle("Counts");
@@ -75,9 +75,9 @@ void ProjectHists_dmsOmega(char *fAna,  char *fDir, char *hname, char *title, ch
     h1D->SetLineWidth(2);
     h1D->Draw();
 
-	sprintf(OutCan,"dmsOmega_%s_%s.gif",tgtOut,strname);
+	sprintf(OutCan,"dmsOmega_%s_%s.gif",tgtOut.c_str(),strname);
 	c1->Print(OutCan);
-	sprintf(OutCan,"dmsOmega_%s_%s.eps",tgtOut,strname);
+	sprintf(OutCan,"dmsOmega_%s_%s.eps",tgtOut.c_str(),strname);
 	c1->Print(OutCan);
 }
 
