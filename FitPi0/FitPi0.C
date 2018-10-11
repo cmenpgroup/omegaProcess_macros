@@ -14,15 +14,15 @@
 #include <stdlib.h>
 #include <iostream>
 
-#define MAX_CUT 16
+#define MAX_CUT 22
 #define MAX_HIST 3
 #define MAX_TGT 3
+#define MAX_RUN 4
 
-gROOT->Reset();
+//gROOT->Reset();
 
 Int_t lcol[MAX_CUT] = {1,2,4,6,7,8,9,13,14,15,16,17,18,19};
 Int_t mkr[10] = {20,21,22,24,23,25,26,27,28,29};
-char *fSame[MAX_CUT] = {"","same","same","same","same","same","same","same", "same", "same", "same", "same", "same", "same"};
 
 Float_t Lmar = 0.125; // set the left margin
 Float_t Rmar = 0.125; // set the right margin
@@ -34,11 +34,87 @@ Float_t PeakLo = 0.11; // lower limit on the peak range
 Float_t PeakHi = 0.16; // upper limit on the peak range
 Float_t Nsigma = 3.0;  // number of sigma of the peak
 
-char *legHeader[3] = {"Cuts: ","All Cuts Except:","Anti-Cuts:"};
-char *RunName[4] = {"C","Fe","Sn","Pb"};
-char *TgtName[MAX_TGT] = {"NoTarget","LD2","Nuc"};
-char *HistName[MAX_HIST] = {"IM2Photons","IM2Photons_woCut","IM2Photons_OpAng_ElecPhoton_Cut"};
-char *CutName[MAX_CUT] = {"None","All #omega cuts","M(#pi^{0})","Q^{2}","W","V_{z} Matching","Part. Topology","#theta_{e-,#gamma}","M(#pi^{+}#pi^{-}","EC 2nd Moment for #gamma's,  Region 1","EC 2nd Moment for #gamma's, Region 2","EC 2nd Moment for #gamma's, Region 3","EC 3rd Moment for #gamma's, Region 1","EC 3rd Moment for #gamma's, Region 2","EC 3rd Moment for #gamma's, Region 3"};
+void Check_HistIndex(Int_t index);
+void PrintHistIndex();
+void Check_TgtIndex(Int_t index);
+void PrintTgtIndex();
+void Check_CutIndex(Int_t index);
+void PrintCutIndex();
+void Check_CutLoHi(Int_t Lo, Int_t Hi);
+
+Double_t gaussFit(Double_t *x, Double_t *par);
+Double_t polFit(Double_t *x, Double_t *par);
+Double_t totFit(Double_t *x, Double_t *par);
+Double_t breitwigner(Double_t *x, Double_t *par);
+
+class Cuts
+{
+    vector<string> LabelCuts;
+    vector<string> LegHeader;
+    vector<string> HistName;
+    vector<string> RunName;
+    vector<string> TgtName;
+    
+public:
+    Cuts();
+    Int_t Get_nCuts() {return LabelCuts.size();};
+    string Get_Cuts(int num) {return LabelCuts[num];};
+    
+    Int_t Get_nLegend() {return LegHeader.size();};
+    string Get_Legend(int num) {return LegHeader[num];};
+    
+    Int_t Get_nHist() {return HistName.size();};
+    string Get_Hist(int num) {return HistName[num];};
+    
+    Int_t Get_nRun() {return RunName.size();};
+    string Get_Run(int num) {return RunName[num];};
+    
+    Int_t Get_nTgt() {return TgtName.size();};
+    string Get_Tgt(int num) {return TgtName[num];};
+};
+
+Cuts::Cuts()
+{
+    LabelCuts.push_back("None");
+    LabelCuts.push_back("All #omega cuts");
+    LabelCuts.push_back("M(#pi^{0})");
+    LabelCuts.push_back("Q^{2}");
+    LabelCuts.push_back("W");
+    LabelCuts.push_back("V_{z} Matching");
+    LabelCuts.push_back("#theta_{e-,#gamma}");
+    LabelCuts.push_back("M(#pi^{+}#pi^{-}");
+    LabelCuts.push_back("Part. Topology");
+    LabelCuts.push_back("EC 2nd Moment for #gamma's, Region 1");
+    LabelCuts.push_back("EC 2nd Moment for #gamma's, Region 2");
+    LabelCuts.push_back("EC 2nd Moment for #gamma's, Region 3");
+    LabelCuts.push_back("EC 3rd Moment for #gamma's, Region 1");
+    LabelCuts.push_back("EC 3rd Moment for #gamma's, Region 2");
+    LabelCuts.push_back("EC 3rd Moment for #gamma's, Region 3");
+    LabelCuts.push_back("Photon TOF M^{2}");
+    LabelCuts.push_back("Dalitz 1");
+    LabelCuts.push_back("Proton In Event");
+    LabelCuts.push_back("Proton-In-Event/All");
+    LabelCuts.push_back("Evt. Particle Comb.");
+    LabelCuts.push_back("Evt. Particle Comb./All");
+    LabelCuts.push_back("ChargedPionMom");
+    
+    LegHeader.push_back("Cuts: ");
+    LegHeader.push_back("All Cuts Except:");
+    LegHeader.push_back("Anti-Cuts:");
+    
+    HistName.push_back("IM2Photons_");
+    HistName.push_back("IM2Photons_woCut_");
+    HistName.push_back("IM2Photons_antiCut_");
+    
+    RunName.push_back("C12");
+    RunName.push_back("Fe56");
+    RunName.push_back("Sn");
+    RunName.push_back("Pb208");
+    
+    TgtName.push_back("NoTarget");
+    TgtName.push_back("LD2");
+    TgtName.push_back("Nuc");
+}
 
 Float_t FitPi0(TH1D *hist, char *plotFilePrefix)
 {
@@ -139,8 +215,6 @@ Float_t FitPi0(TH1D *hist, char *plotFilePrefix)
 	char OutCan[100];
 	sprintf(OutCan,"%s.gif",plotFilePrefix);
 	can1->Print(OutCan);
-	sprintf(OutCan,"%s.eps",plotFilePrefix);
-	can1->Print(OutCan);
 
 	can1->Close();
 
@@ -158,7 +232,7 @@ Float_t FitPi0(TH1D *hist, char *plotFilePrefix)
 	return yield;
 }
 
-void FitPi0_OneTarget(char *fAna, Int_t histIndex=0, Int_t runIndex=0, Int_t tgtIndex = 0, Int_t cutIndex=0)
+void FitPi0_OneTarget(string fAna, Int_t histIndex=0, Int_t runIndex=0, Int_t tgtIndex = 0, Int_t cutIndex=0)
 {
 	Int_t i;
 	Float_t yield;
@@ -166,23 +240,25 @@ void FitPi0_OneTarget(char *fAna, Int_t histIndex=0, Int_t runIndex=0, Int_t tgt
     char hname[50];
     char plotFilePrefix[100];
     
+    Cuts myCuts;
+    
     Check_HistIndex(histIndex);
     Check_TgtIndex(tgtIndex);
     Check_CutIndex(cutIndex);
     
 	// data files contain the trees
-    printf("Analyzing file %s\n",fAna);
-    TFile *fm = new TFile(fAna,"READ");
-    TDirectory *tmp = fm->GetDirectory(TgtName[tgtIndex]);
+    printf("Analyzing file %s\n",fAna.c_str());
+    TFile *fm = new TFile(fAna.c_str(),"READ");
+    TDirectory *tmp = fm->GetDirectory(myCuts.Get_Tgt(tgtIndex).c_str());
     
-    sprintf(hname,"%s_%s",HistName[histIndex],TgtName[tgtIndex]);
+    sprintf(hname,"%s_%s",myCuts.Get_Hist(histIndex).c_str(),myCuts.Get_Tgt(tgtIndex).c_str());
     cout << hname << endl;
     TH2D *h2D = (TH2D*)tmp->Get(hname);
     
     sprintf(strname,"%s_%i",hname,i);
     TH1D *hist = (TH1D*)h2D->ProjectionX(strname,cutIndex+1,cutIndex+1,"");
     
-    sprintf(plotFilePrefix,"FitPi0_%s_%s",RunName[runIndex],hname);
+    sprintf(plotFilePrefix,"FitPi0_%s_%s",myCuts.Get_Run(runIndex).c_str(),hname);
 
     yield = FitPi0(hist,plotFilePrefix);
 
@@ -191,7 +267,7 @@ void FitPi0_OneTarget(char *fAna, Int_t histIndex=0, Int_t runIndex=0, Int_t tgt
 	sprintf(OutFile,"%s.yld",plotFilePrefix);
 	ofstream fout(OutFile);
     
-	fout<<TgtName<<"\t"<<yield<<"\t"<<sqrt(yield)<<endl;
+	fout<<myCuts.Get_Tgt(tgtIndex).c_str()<<"\t"<<yield<<"\t"<<sqrt(yield)<<endl;
 
 	fout.close(); // close the text file
 	fm->Close();  // close ROOT file
@@ -242,19 +318,20 @@ Double_t totFit(Double_t *x, Double_t *par) {
 //                  chanLo = lower bin
 //                  chanHi = upper bin
 //
-void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t chanLo = 0, Int_t chanHi=0)
+void PlotPi0_CutIndex(string fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t chanLo = 0, Int_t chanHi=0)
 {
     Int_t i;
     char OutCan[100];
     char strname[100];
     char hname[50];
     char title[100];
-    char strname[100];
     char legLabel[50];
     
     Int_t iColor = 0;
     
     TH1D *h1D[MAX_CUT];
+    
+    Cuts myCuts;
     
     Check_HistIndex(histIndex);
     Check_TgtIndex(tgtIndex);
@@ -270,9 +347,9 @@ void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t 
     c1->SetFillStyle(4000);
     
     // data files contain the trees
-    printf("Analyzing file %s\n",fAna);
-    TFile *fm = new TFile(fAna,"READ");
-    TDirectory *tmp = fm->GetDirectory(TgtName[tgtIndex]);
+    printf("Analyzing file %s\n",fAna.c_str());
+    TFile *fm = new TFile(fAna.c_str(),"READ");
+    TDirectory *tmp = fm->GetDirectory(myCuts.Get_Tgt(tgtIndex).c_str());
     
     c1->cd();
     gPad->SetLeftMargin(Lmar);
@@ -281,13 +358,13 @@ void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t 
     
     TLegend *leg = new TLegend(0.3,0.5,1.0,0.875);
     
-    sprintf(hname,"%s_%s",HistName[histIndex],TgtName[tgtIndex]);
+    sprintf(hname,"%s%s",myCuts.Get_Hist(histIndex).c_str(),myCuts.Get_Tgt(tgtIndex).c_str());
     TH2D *h2D = (TH2D*)tmp->Get(hname);
 
     sprintf(strname,"%s_0",hname);
     TH1D *h1D_noCut = (TH1D*)h2D->ProjectionX(strname,1,1,"");
     
-    sprintf(title,"Target: %s",TgtName[tgtIndex]);
+    sprintf(title,"Target: %s",myCuts.Get_Tgt(tgtIndex).c_str());
     h1D_noCut->SetTitle(title);
     h1D_noCut->GetXaxis()->CenterTitle();
     h1D_noCut->GetYaxis()->CenterTitle();
@@ -296,7 +373,7 @@ void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t 
     h1D_noCut->SetLineWidth(2);
     h1D_noCut->Draw();
     
-    sprintf(legLabel,"%s",CutName[0]);
+    sprintf(legLabel,"%s",myCuts.Get_Cuts(0).c_str());
     leg->AddEntry(h1D_noCut,legLabel,"l");
     
     iColor++;
@@ -305,17 +382,17 @@ void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t 
         sprintf(strname,"%s_%i",hname,i);
         h1D[i] = (TH1D*)h2D->ProjectionX(strname,i+1,i+1,"");
         
-        sprintf(title,"Target: %s",TgtName[tgtIndex]);
+        sprintf(title,"Target: %s",myCuts.Get_Tgt(tgtIndex).c_str());
         h1D[i]->SetTitle(title);
         h1D[i]->GetXaxis()->CenterTitle();
         h1D[i]->GetYaxis()->CenterTitle();
         h1D[i]->GetYaxis()->SetTitle("Counts");
         h1D[i]->GetYaxis()->SetTitleOffset(yoff);
         h1D[i]->SetLineWidth(2);
-        if(chanLo!=chanHi) h1D[i]->SetLineColor(lcol[iColor]);
+        h1D[i]->SetLineColor(lcol[iColor]);
         h1D[i]->Draw("same");
         
-        sprintf(legLabel,"%s",CutName[i]);
+        sprintf(legLabel,"%s",myCuts.Get_Cuts(i).c_str());
         leg->AddEntry(h1D[i],legLabel,"l");
         
         iColor++;
@@ -323,12 +400,10 @@ void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t 
     
     leg->SetLineColor(0);
     leg->SetFillStyle(0);
-    leg->SetHeader(legHeader[histIndex]);
+    leg->SetHeader(myCuts.Get_Legend(histIndex).c_str());
     leg->Draw();
     
     sprintf(OutCan,"PlotPi0_%s_%i_%i.gif",hname,chanLo,chanHi);
-    c1->Print(OutCan);
-    sprintf(OutCan,"PlotPi0_%s_%i_%i.eps",hname,chanLo,chanHi);
     c1->Print(OutCan);
 }
 
@@ -338,16 +413,17 @@ void PlotPi0_CutIndex(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t 
 //                  fAna = output from eg2a DMS
 //                  tgtIndex = target index
 //
-void PlotPi0_AllGrid(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0)
+void PlotPi0_AllGrid(string fAna, Int_t histIndex =0, Int_t tgtIndex = 0)
 {
     Int_t i;
     char OutCan[100];
     char strname[100];
     char hname[50];
     char title[100];
-    char strname[100];
     
     TH1D *h1D[MAX_CUT];
+    
+    Cuts myCuts;
     
     Check_HistIndex(histIndex);
     Check_TgtIndex(tgtIndex);
@@ -364,11 +440,11 @@ void PlotPi0_AllGrid(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0)
     c1->Divide(nrow,nrow);
     
     // data files contain the trees
-    printf("Analyzing file %s\n",fAna);
-    TFile *fm = new TFile(fAna,"READ");
-    TDirectory *tmp = fm->GetDirectory(TgtName[tgtIndex]);
+    printf("Analyzing file %s\n",fAna.c_str());
+    TFile *fm = new TFile(fAna.c_str(),"READ");
+    TDirectory *tmp = fm->GetDirectory(myCuts.Get_Tgt(tgtIndex).c_str());
     
-    sprintf(hname,"%s_%s",HistName[histIndex],TgtName[tgtIndex]);
+    sprintf(hname,"%s%s",myCuts.Get_Hist(histIndex).c_str(),myCuts.Get_Tgt(tgtIndex).c_str());
     TH2D *h2D = (TH2D*)tmp->Get(hname);
     
     for(i=0; i<MAX_CUT; i++){
@@ -380,7 +456,7 @@ void PlotPi0_AllGrid(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0)
         sprintf(strname,"%s_%i",hname,i);
         h1D[i] = (TH1D*)h2D->ProjectionX(strname,i+1,i+1,"");
         
-        sprintf(title,"Target: %s, Cut: %s",TgtName[tgtIndex],CutName[i]);
+        sprintf(title,"Target: %s, Cut: %s",myCuts.Get_Tgt(tgtIndex).c_str(),myCuts.Get_Cuts(i).c_str());
         h1D[i]->SetTitle(title);
         h1D[i]->GetXaxis()->CenterTitle();
         h1D[i]->GetYaxis()->CenterTitle();
@@ -392,7 +468,95 @@ void PlotPi0_AllGrid(char *fAna, Int_t histIndex =0, Int_t tgtIndex = 0)
     
     sprintf(OutCan,"PlotPi0_AllGrid_%s.gif",hname);
     c1->Print(OutCan);
-    sprintf(OutCan,"PlotPi0_AllGrid_%s.eps",hname);
+}
+
+//
+// CompPi0_Files - compare pi0 inv. mass for a specific cut selection between files
+//
+//                  fAna1 = output 1 from eg2a DMS
+//                  fAna2 = output 2 from eg2a DMS
+//                  histIndex = 2-D histogram name
+//                  tgtIndex = target index
+//                  chan = cut bin
+//
+void CompPi0_Files(string fAna1, string fAna2, Int_t histIndex =0, Int_t tgtIndex = 0, Int_t chan = 0, string legLine1 = "Leg 1", string legLine2 = "Leg 2", string comment="test")
+{
+    Int_t i;
+    char OutCan[100];
+    char strname[100];
+    char hname[50];
+    char title[100];
+    char legLabel[50];
+    
+    TFile *fm[2];
+    TDirectory *dir[2];
+    TH1D *h1D[2];
+    TH2D *h2D[2];
+    
+    Cuts myCuts;
+    
+    Check_HistIndex(histIndex);
+    Check_TgtIndex(tgtIndex);
+    Check_CutIndex(chan);
+    
+    // Canvas to plot histogram
+    TCanvas *c1 = new TCanvas("c1","c1",0,0,600,600);
+    c1->SetBorderMode(1);  //Bordermode (-1=down, 0 = no border, 1=up)
+    c1->SetBorderSize(5);
+    gStyle->SetOptStat(0);
+    c1->SetFillStyle(4000);
+    
+    sprintf(hname,"%s%s",myCuts.Get_Hist(histIndex).c_str(),myCuts.Get_Tgt(tgtIndex).c_str());
+    
+    c1->cd();
+    gPad->SetLeftMargin(Lmar);
+    gPad->SetRightMargin(Rmar);
+    gPad->SetFillColor(0);
+    
+    TLegend *leg = new TLegend(0.3,0.5,1.0,0.875);
+    
+    for(i=0; i<2; i++){
+        // data files contain the trees
+        switch(i){
+            case 0:
+                sprintf(legLabel,"%s",legLine1.c_str());
+                printf("Analyzing file %s\n",fAna1.c_str());
+                fm[i] = new TFile(fAna1.c_str(),"READ");
+                break;
+            case 1:
+                sprintf(legLabel,"%s",legLine2.c_str());
+                printf("Analyzing file %s\n",fAna2.c_str());
+                fm[i] = new TFile(fAna2.c_str(),"READ");
+                break;
+            default: sprintf(legLabel,"Insert File Name"); break;
+        }
+        
+        dir[i] = fm[i]->GetDirectory(myCuts.Get_Tgt(tgtIndex).c_str());
+        
+        h2D[i] = (TH2D*)dir[i]->Get(hname);
+        sprintf(strname,"%s_%i",hname,i);
+        h1D[i] = (TH1D*)h2D[i]->ProjectionX(strname,chan+1,chan+1,"");
+        
+        sprintf(title,"Target: %s, Cuts: %s",myCuts.Get_Tgt(tgtIndex).c_str(),myCuts.Get_Cuts(chan).c_str());
+        h1D[i]->SetTitle(title);
+        h1D[i]->GetXaxis()->CenterTitle();
+        h1D[i]->GetYaxis()->CenterTitle();
+        h1D[i]->GetYaxis()->SetTitle("Counts");
+        h1D[i]->GetYaxis()->SetTitleOffset(yoff);
+        h1D[i]->SetLineWidth(2);
+        h1D[i]->SetLineColor(lcol[i]);
+        if(i==1) h1D[1]->Scale(h1D[0]->Integral()/h1D[1]->Integral());
+        (i==0) ? h1D[i]->Draw() : h1D[i]->Draw("same");
+        
+        leg->AddEntry(h1D[i],legLabel,"l");
+    }
+    
+    leg->SetLineColor(0);
+    leg->SetFillStyle(0);
+    leg->SetHeader("Files:");
+    leg->Draw();
+    
+    sprintf(OutCan,"CompPi0_%s_%i_%s.gif",hname,chan,comment.c_str());
     c1->Print(OutCan);
 }
 
@@ -407,9 +571,11 @@ void Check_HistIndex(Int_t index){
 void PrintHistIndex()
 {
     Int_t i;
+    Cuts myCuts;
+    
     cout<<"Histogram Index:"<<endl;
     for(i=0;i<MAX_HIST;i++){
-        cout<<i<<"\t"<<HistName[i]<<endl;
+        cout<<i<<"\t"<<myCuts.Get_Hist(i)<<endl;
     }
 }
 
@@ -425,9 +591,11 @@ void Check_TgtIndex(Int_t index)
 void PrintTgtIndex()
 {
     Int_t i;
+    Cuts myCuts;
+    
     cout<<"Target Index:"<<endl;
     for(i=0;i<MAX_TGT;i++){
-        cout<<i<<"\t"<<TgtName[i]<<endl;
+        cout<<i<<"\t"<<myCuts.Get_Tgt(i)<<endl;
     }
 }
 
@@ -443,9 +611,11 @@ void Check_CutIndex(Int_t index)
 void PrintCutIndex()
 {
     Int_t i;
+    Cuts myCuts;
+    
     cout<<"Cut Index:"<<endl;
     for(i=0;i<MAX_CUT;i++){
-        cout<<i<<"\t"<<CutName[i]<<endl;
+        cout<<i<<"\t"<<myCuts.Get_Cuts(i)<<endl;
     }
 }
 
